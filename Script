@@ -1,0 +1,54 @@
+import os
+import shutil
+from datetime import datetime
+
+# The directory containing the files to be organized
+source_dir = '/path/to/source/directory'
+
+# The directory to move the organized files to
+destination_dir = '/path/to/destination/directory'
+
+# The types of files to be moved
+file_types = ('.txt', '.pdf', '.doc', '.docx')
+
+# A dictionary to keep track of the number of files and total size moved
+stats = {'files': 0, 'size': 0}
+
+# Create a log file
+log_file = open("organizer.log", "w")
+
+for root, dirs, files in os.walk(source_dir):
+    for file in files:
+        if file.endswith(file_types):
+            source_path = os.path.join(root, file)
+            file_size = os.path.getsize(source_path)
+            file_created = datetime.fromtimestamp(os.path.getctime(source_path))
+            sub_directory = os.path.join(destination_dir, file_created.strftime('%Y-%m-%d'))
+            destination_path = os.path.join(sub_directory, file)
+            
+            # if file already exist in destination folder
+            if os.path.exists(destination_path):
+                file_name, file_ext = os.path.splitext(file)
+                i = 1
+                while os.path.exists(destination_path):
+                    destination_path = os.path.join(sub_directory, f"{file_name} ({i}){file_ext}")
+                    i += 1
+            
+            # Check if the subdirectory exists and create it if necessary
+            if not os.path.exists(sub_directory):
+                os.makedirs(sub_directory)
+
+            # Move the file
+            shutil.move(source_path, destination_path)
+            stats['files'] += 1
+            stats['size'] += file_size
+            
+            # Log the move
+            log_file.write(f"{file} - {file_size:,} bytes - {file_created} - {destination_path}\n")
+
+# Write the final stats to the log file
+log_file.write(f"Total files: {stats['files']}\n")
+log_file.write(f"Total size: {stats['size']:,} bytes\n")
+
+# Close the log file
+log_file.close()
